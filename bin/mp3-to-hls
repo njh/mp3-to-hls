@@ -1,0 +1,15 @@
+#!/usr/bin/env ruby
+
+$LOAD_PATH.unshift("#{__dir__}/../lib")
+
+require 'mp3_to_hls'
+
+if ARGV.count != 2
+  $stderr.puts "Usage: mp3-to-hls <inputfile.mp3> <outputdir>"
+  exit -1
+end
+
+mp3tohls = MP3toHLS.new
+mp3tohls.input_filename = ARGV[0]
+mp3tohls.output_dir = ARGV[1]
+mp3tohls.run
