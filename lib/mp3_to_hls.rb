@@ -1,7 +1,7 @@
-require "mp3file"
+require 'mp3file'
 require 'taglib'
 
-require "mp3_to_hls/version"
+require 'mp3_to_hls/version'
 
 class MP3toHLS
   attr_accessor :input_filename
@@ -19,29 +19,29 @@ class MP3toHLS
   end
 
   def create_output_dir
-    if !File.exist?(output_dir) 
+    if !File.exist?(output_dir)
       Dir.mkdir(output_dir)
     elsif !File.directory?(output_dir)
-      raise "Output path exists but it is not a directory"
+      raise 'Output path exists but it is not a directory'
     end
   end
 
   def write_timestamp_tag(filename, ts)
     TagLib::MPEG::File.open(filename) do |file|
-      tag = file.id3v2_tag(create=true)
+      tag = file.id3v2_tag(create = true)
 
       # Create a 'PRIV' frame
       priv = TagLib::ID3v2::PrivateFrame.new
       priv.data = [ts & 0x0100000000, ts & 0xFFFFFFFF].pack('NN')
-      priv.owner = "com.apple.streaming.transportStreamTimestamp"
+      priv.owner = 'com.apple.streaming.transportStreamTimestamp'
       tag.add_frame(priv)
 
-      file.save or raise "Failed to write ID3 tag"
+      file.save or raise 'Failed to write ID3 tag'
     end
   end
 
   def write_chunk(chunk_data, sample_count, start_time, chunk_number)
-    filename = File.join(output_dir, sprintf("chunk_%6.6d.mp3", chunk_number))
+    filename = File.join(output_dir, sprintf('chunk_%6.6d.mp3', chunk_number))
     puts "Creating: #{filename}"
 
     File.open(filename, 'wb') do |file|
@@ -67,7 +67,7 @@ class MP3toHLS
     chunk_sample_count = 0
     total_samples = 0
 
-    File.open(mp3file.file.path, "rb") do |file|
+    File.open(mp3file.file.path, 'rb') do |file|
       offset = mp3file.first_header_offset
 
       file.seek(offset, IO::SEEK_SET)
@@ -127,18 +127,18 @@ class MP3toHLS
     # Now create the HLS manifest file
     manifest_filepath = File.join(output_dir, manifest_filename)
     File.open(manifest_filepath, 'wb') do |file|
-      file.puts "#EXTM3U"
+      file.puts '#EXTM3U'
       file.puts "#EXT-X-TARGETDURATION:#{target_chunk_duration.ceil}"
-      file.puts "#EXT-X-VERSION:3"
-      file.puts "#EXT-X-MEDIA-SEQUENCE:0"
-      file.puts "#EXT-X-PLAYLIST-TYPE:VOD"
+      file.puts '#EXT-X-VERSION:3'
+      file.puts '#EXT-X-MEDIA-SEQUENCE:0'
+      file.puts '#EXT-X-PLAYLIST-TYPE:VOD'
 
       @chunks.each do |chunk|
         file.puts "#EXTINF:#{chunk[:duration]}"
         file.puts File.basename(chunk[:filename])
       end
 
-      file.puts "#EXT-X-ENDLIST"
+      file.puts '#EXT-X-ENDLIST'
     end
   end
 
