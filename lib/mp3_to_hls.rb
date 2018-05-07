@@ -71,7 +71,7 @@ class MP3toHLS
       offset = mp3file.first_header_offset
 
       file.seek(offset, IO::SEEK_SET)
-      while !file.eof?
+      until file.eof?
         # Read in the header
         begin
           header = Mp3file::MP3Header.new(file)
