@@ -36,7 +36,7 @@ class MP3toHLS
       priv.owner = 'com.apple.streaming.transportStreamTimestamp'
       tag.add_frame(priv)
 
-      file.save or raise 'Failed to write ID3 tag'
+      file.save || raise('Failed to write ID3 tag')
     end
   end
 
