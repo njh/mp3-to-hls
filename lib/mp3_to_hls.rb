@@ -126,9 +126,11 @@ class MP3toHLS
     end
   end
 
+  def manifest_filepath
+    File.join(output_dir, manifest_filename)
+  end
+
   def write_manifest
-    # Now create the HLS manifest file
-    manifest_filepath = File.join(output_dir, manifest_filename)
     File.open(manifest_filepath, 'wb') do |file|
       file.puts '#EXTM3U'
       file.puts "#EXT-X-TARGETDURATION:#{target_chunk_duration.ceil}"
