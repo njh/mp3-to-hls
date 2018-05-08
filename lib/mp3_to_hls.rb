@@ -27,13 +27,13 @@ class MP3toHLS
     end
   end
 
-  def write_timestamp_tag(filename, ts)
+  def write_timestamp_tag(filename, timestamp)
     TagLib::MPEG::File.open(filename) do |file|
       tag = file.id3v2_tag(true)
 
       # Create a 'PRIV' frame
       priv = TagLib::ID3v2::PrivateFrame.new
-      priv.data = [ts & 0x0100000000, ts & 0xFFFFFFFF].pack('NN')
+      priv.data = [timestamp & 0x0100000000, timestamp & 0xFFFFFFFF].pack('NN')
       priv.owner = 'com.apple.streaming.transportStreamTimestamp'
       tag.add_frame(priv)
 
