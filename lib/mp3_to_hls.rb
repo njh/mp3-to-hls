@@ -41,7 +41,7 @@ class MP3toHLS
   end
 
   def write_chunk(chunk_data, sample_count, start_time, chunk_number)
-    filename = File.join(output_dir, sprintf('chunk_%6.6d.mp3', chunk_number))
+    filename = File.join(output_dir, format('chunk_%6.6d.mp3', chunk_number))
     puts "Creating: #{filename}"
 
     File.open(filename, 'wb') do |file|
