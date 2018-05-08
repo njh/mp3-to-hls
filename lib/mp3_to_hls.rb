@@ -50,7 +50,11 @@ class MP3toHLS
 
     write_timestamp_tag(filename, (start_time * 90_000.0).floor)
 
-    {:filename => filename, :start_time => start_time, :duration => sample_count}
+    {
+      :filename => filename,
+      :start_time => start_time,
+      :duration => sample_count
+    }
   end
 
   def write_chunks
@@ -61,7 +65,6 @@ class MP3toHLS
     target_samples = target_chunk_duration * mp3file.samplerate
     puts "Target Samples per chunk: #{target_samples}"
     puts
-
 
     chunk_data = ''
     chunk_sample_count = 0
@@ -109,7 +112,6 @@ class MP3toHLS
         chunk_sample_count += header.samples
         offset += header.frame_size
       end
-
     end
 
     if chunk_sample_count > 0
