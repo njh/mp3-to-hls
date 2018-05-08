@@ -5,7 +5,7 @@ $LOAD_PATH.unshift("#{__dir__}/../lib")
 require 'mp3_to_hls'
 
 if ARGV.count != 2
-  $stderr.puts 'Usage: mp3-to-hls <inputfile.mp3> <outputdir>'
+  warn 'Usage: mp3-to-hls <inputfile.mp3> <outputdir>'
   exit(-1)
 end
 
