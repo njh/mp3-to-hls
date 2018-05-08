@@ -3,6 +3,7 @@ require 'taglib'
 
 require 'mp3_to_hls/version'
 
+# Convert an MP3 file into an HLS stream
 class MP3toHLS
   attr_accessor :input_filename
   attr_accessor :manifest_filename
