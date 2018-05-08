@@ -18,3 +18,15 @@ Style/SymbolArray:
 MethodLength:
   Enabled: true
   Max: 100
+
+# TODO: break up into smaller classes?
+ClassLength:
+  Max: 200
+
+# TODO: re-factor write_chunk and write_manifest
+Metrics/AbcSize:
+  Max: 52
+
+# TODO: convert File.open block into a template?
+Metrics/BlockLength:
+  Max: 32
