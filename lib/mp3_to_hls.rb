@@ -48,7 +48,7 @@ class MP3toHLS
       file.write chunk_data
     end
 
-    write_timestamp_tag(filename, (start_time * 90000.0).floor)
+    write_timestamp_tag(filename, (start_time * 90_000.0).floor)
 
     {:filename => filename, :start_time => start_time, :duration => sample_count}
   end
