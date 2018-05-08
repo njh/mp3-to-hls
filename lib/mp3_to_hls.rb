@@ -28,7 +28,7 @@ class MP3toHLS
 
   def write_timestamp_tag(filename, ts)
     TagLib::MPEG::File.open(filename) do |file|
-      tag = file.id3v2_tag(create = true)
+      tag = file.id3v2_tag(true)
 
       # Create a 'PRIV' frame
       priv = TagLib::ID3v2::PrivateFrame.new
