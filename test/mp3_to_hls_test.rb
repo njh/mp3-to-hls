@@ -26,7 +26,20 @@ class MP3toHLSTest < Minitest::Test
     refute_nil ::MP3toHLS::VERSION
   end
 
-  def test_it_does_something_useful
-    assert true
+  def test_write_empty_manifest
+    @mp3hls.output_dir = @testdir
+    @mp3hls.write_manifest
+
+    assert File.exist?(@mp3hls.manifest_filepath), 'Manfest file should exist'
+
+    lines = File.readlines(@mp3hls.manifest_filepath).map(&:strip)
+    assert_equal 6, lines.count
+
+    assert_equal '#EXTM3U', lines[0]
+    assert_equal '#EXT-X-TARGETDURATION:10', lines[1]
+    assert_equal '#EXT-X-VERSION:3', lines[2]
+    assert_equal '#EXT-X-MEDIA-SEQUENCE:0', lines[3]
+    assert_equal '#EXT-X-PLAYLIST-TYPE:VOD', lines[4]
+    assert_equal '#EXT-X-ENDLIST', lines[5]
   end
 end
