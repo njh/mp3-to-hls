@@ -8,7 +8,6 @@ class MP3toHLSTest < Minitest::Test
     tempfile = Tempfile.new('mp3-to-hls-test')
     @testdir = tempfile.path
     tempfile.close!
-    Dir.mkdir(@testdir)
   end
 
   def teardown
@@ -26,8 +25,22 @@ class MP3toHLSTest < Minitest::Test
     refute_nil ::MP3toHLS::VERSION
   end
 
+  def test_create_output_dir
+    assert(
+      !File.exist?(@testdir),
+      'Output dir should not exist before calling #create_output_dir'
+    )
+    @mp3hls.output_dir = @testdir
+    @mp3hls.create_output_dir
+    assert(
+      File.exist?(@testdir),
+      'Output dir should exist after calling #create_output_dir'
+    )
+  end
+
   def test_write_empty_manifest
     @mp3hls.output_dir = @testdir
+    @mp3hls.create_output_dir
     @mp3hls.write_manifest
 
     assert File.exist?(@mp3hls.manifest_filepath), 'Manfest file should exist'
