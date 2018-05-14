@@ -1,6 +1,6 @@
 require 'mp3file'
-require 'taglib'
 
+require 'mp3_to_hls/chunk'
 require 'mp3_to_hls/version'
 
 # Convert an MP3 file into an HLS stream
@@ -16,6 +16,7 @@ class MP3toHLS
   def initialize
     @target_chunk_duration = DEFAULT_TARGET_LENGTH
     @manifest_filename = DEFAULT_MANIFEST_FILENAME
+    @total_samples = 0
     @chunks = []
   end
 
@@ -27,35 +28,10 @@ class MP3toHLS
     end
   end
 
-  def write_timestamp_tag(filename, timestamp)
-    TagLib::MPEG::File.open(filename) do |file|
-      tag = file.id3v2_tag(true)
-
-      # Create a 'PRIV' frame
-      priv = TagLib::ID3v2::PrivateFrame.new
-      priv.data = [timestamp & 0x0100000000, timestamp & 0xFFFFFFFF].pack('NN')
-      priv.owner = 'com.apple.streaming.transportStreamTimestamp'
-      tag.add_frame(priv)
-
-      file.save || raise('Failed to write ID3 tag')
-    end
-  end
-
-  def write_chunk(chunk_data, sample_count, start_time, chunk_number)
-    filename = File.join(output_dir, format('chunk_%6.6d.mp3', chunk_number))
-    puts "Creating: #{filename}"
-
-    File.open(filename, 'wb') do |file|
-      file.write chunk_data
-    end
-
-    write_timestamp_tag(filename, (start_time * 90_000.0).floor)
-
-    {
-      :filename => filename,
-      :start_time => start_time,
-      :duration => sample_count
-    }
+  def new_chunk
+    chunk = MP3toHLS::Chunk.new(@chunks.count)
+    chunk.first_sample = @total_samples
+    @chunks << chunk
   end
 
   def write_chunks
@@ -67,9 +43,7 @@ class MP3toHLS
     puts "Target Samples per chunk: #{target_samples}"
     puts
 
-    chunk_data = ''
-    chunk_sample_count = 0
-    total_samples = 0
+    new_chunk
 
     File.open(mp3file.file.path, 'rb') do |file|
       offset = mp3file.first_header_offset
@@ -97,32 +71,20 @@ class MP3toHLS
         frame = file.read(header.frame_size)
 
         # Will this frame take us over the target number of samples?
-        if chunk_sample_count + header.samples > target_samples
-          @chunks << write_chunk(
-            chunk_data,
-            chunk_sample_count,
-            total_samples.to_f / mp3file.samplerate,
-            @chunks.count
-          )
-          total_samples += chunk_sample_count
-          chunk_data = ''
-          chunk_sample_count = 0
+        if @chunks.last.samples + header.samples > target_samples
+          @chunks.last.write(@output_dir)
+          @total_samples += @chunks.last.samples
+          new_chunk
         end
 
-        chunk_data += frame
-        chunk_sample_count += header.samples
+        @chunks.last.append_audio(frame, header)
         offset += header.frame_size
       end
     end
 
-    if chunk_sample_count > 0
+    if @chunks.last.samples > 0
       # Write out a final chunk
-      @chunks << write_chunk(
-        chunk_data,
-        chunk_sample_count,
-        total_samples.to_f / mp3file.samplerate,
-        @chunks.count
-      )
+      @chunks.last.write(@output_dir)
     end
   end
 
@@ -139,8 +101,8 @@ class MP3toHLS
       file.puts '#EXT-X-PLAYLIST-TYPE:VOD'
 
       @chunks.each do |chunk|
-        file.puts "#EXTINF:#{chunk[:duration]}"
-        file.puts File.basename(chunk[:filename])
+        file.puts "#EXTINF:#{chunk.duration}"
+        file.puts chunk.filename
       end
 
       file.puts '#EXT-X-ENDLIST'
