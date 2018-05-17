@@ -6,6 +6,7 @@ class MP3toHLS
     attr_accessor :number
     attr_accessor :samplerate
     attr_accessor :first_sample
+    attr_accessor :frames
     attr_accessor :samples
     attr_accessor :data
 
@@ -13,6 +14,7 @@ class MP3toHLS
       @number = chunk_number
       @samplerate = nil
       @samples = 0
+      @frames = 0
       @data = ''
     end
 
@@ -42,10 +44,11 @@ class MP3toHLS
       ((first_sample.to_f / samplerate) * 90_000.0).floor
     end
 
-    def append_audio(frame, header)
+    def append_frame(frame, header)
       @samplerate ||= header.samplerate
       @data += frame
       @samples += header.samples
+      @frames += 1
     end
 
     def write_timestamp_tag(filepath)

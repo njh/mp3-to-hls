@@ -36,12 +36,16 @@ class MP3toHLS
 
   def write_chunks
     mp3file = Mp3file::MP3File.new(input_filename)
+    samples_per_chunk = target_chunk_duration * mp3file.samplerate
+    frames_per_chunk = (samples_per_chunk.to_f / mp3file.first_header.samples).floor
+
     puts "Mode: #{mp3file.mode}"
     puts "Bit Rate: #{mp3file.bitrate} kpbs"
     puts "Sample Rate: #{mp3file.samplerate} Hz"
-    target_samples = target_chunk_duration * mp3file.samplerate
-    puts "Target Samples per chunk: #{target_samples}"
+    puts "Target Chunk Duration: #{target_chunk_duration} secs"
+    puts "Frames per Chunk: #{frames_per_chunk}"
     puts
+
 
     new_chunk
 
@@ -66,24 +70,23 @@ class MP3toHLS
           next
         end
 
-        # Go back to the start of the frame
+        # Go back to the start of the frame and read it in
         file.seek(offset, IO::SEEK_SET)
         frame = file.read(header.frame_size)
+        @chunks.last.append_frame(frame, header)
+        offset += header.frame_size
 
-        # Will this frame take us over the target number of samples?
-        if @chunks.last.samples + header.samples > target_samples
+        # Do we have enough frames?
+        if @chunks.last.frames >= frames_per_chunk
           @chunks.last.write(@output_dir)
           @total_samples += @chunks.last.samples
           new_chunk
         end
-
-        @chunks.last.append_audio(frame, header)
-        offset += header.frame_size
       end
     end
 
-    if @chunks.last.samples > 0
-      # Write out a final chunk
+    # Write out the final chunk
+    if @chunks.last.frames > 0
       @chunks.last.write(@output_dir)
     end
   end
