@@ -53,7 +53,7 @@ class MP3toHLS
         # Read in the header
         begin
           header = Mp3file::MP3Header.new(file)
-        rescue InvalidMP3HeaderError
+        rescue Mp3file::InvalidMP3HeaderError
           break
         end
 
