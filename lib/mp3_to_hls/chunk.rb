@@ -4,16 +4,15 @@ class MP3toHLS
   # A single chunk/file in the HLS stream
   class Chunk
     attr_accessor :number
-    attr_accessor :samplerate
-    attr_accessor :first_sample
+    attr_accessor :start_time
+    attr_accessor :duration
     attr_accessor :frames
-    attr_accessor :samples
     attr_accessor :data
 
     def initialize(chunk_number)
       @number = chunk_number
-      @samplerate = nil
-      @samples = 0
+      @start_time = 0.0
+      @duration = 0.0
       @frames = 0
       @data = ''
     end
@@ -36,18 +35,13 @@ class MP3toHLS
       write_timestamp_tag(filepath)
     end
 
-    def duration
-      samples.to_f / samplerate.to_f
-    end
-
     def timestamp
-      ((first_sample.to_f / samplerate) * 90_000.0).floor
+      (start_time.to_f * 90_000.0).floor
     end
 
-    def append_frame(frame, header)
-      @samplerate ||= header.samplerate
+    def append_frame(frame, duration)
       @data += frame
-      @samples += header.samples
+      @duration += duration
       @frames += 1
     end
 
