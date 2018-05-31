@@ -28,6 +28,32 @@ class MP3toHLS
     end
   end
 
+  def open_input_file
+    @mp3file = Mp3file::MP3File.new(input_filename)
+    @samples_per_chunk = target_chunk_duration * @mp3file.samplerate
+    @frames_per_chunk = @samples_per_chunk / @mp3file.first_header.samples
+
+    puts "Mode: #{@mp3file.mode}"
+    puts "Bit Rate: #{@mp3file.bitrate} kpbs"
+    puts "Sample Rate: #{@mp3file.samplerate} Hz"
+    puts "Target Chunk Duration: #{target_chunk_duration} secs"
+    puts "Frames per Chunk: #{@frames_per_chunk}"
+    puts
+
+    @input_file = File.open(@mp3file.file.path, 'rb')
+    offset = @mp3file.first_header_offset
+
+    @input_file.seek(offset, IO::SEEK_SET)
+    header = Mp3file::MP3Header.new(@input_file)
+
+    # Skip over the Xing header
+    @input_file.seek(header.side_bytes, IO::SEEK_CUR)
+    xing_magic = @input_file.read(4)
+    offset += header.frame_size if xing_magic =~ /Xing|Info/
+
+    @input_file.seek(offset, IO::SEEK_SET)
+  end
+
   def new_chunk
     chunk = MP3toHLS::Chunk.new(@chunks.count)
     chunk.start_time = @total_duration
@@ -35,56 +61,36 @@ class MP3toHLS
   end
 
   def write_chunks
-    mp3file = Mp3file::MP3File.new(input_filename)
-    samples_per_chunk = target_chunk_duration * mp3file.samplerate
-    frames_per_chunk = samples_per_chunk / mp3file.first_header.samples
-
-    puts "Mode: #{mp3file.mode}"
-    puts "Bit Rate: #{mp3file.bitrate} kpbs"
-    puts "Sample Rate: #{mp3file.samplerate} Hz"
-    puts "Target Chunk Duration: #{target_chunk_duration} secs"
-    puts "Frames per Chunk: #{frames_per_chunk}"
-    puts
-
     new_chunk
 
-    File.open(mp3file.file.path, 'rb') do |file|
-      offset = mp3file.first_header_offset
-
-      file.seek(offset, IO::SEEK_SET)
-      until file.eof?
-        # Read in the header
-        begin
-          header = Mp3file::MP3Header.new(file)
-        rescue Mp3file::InvalidMP3HeaderError
-          break
-        end
-
-        # Skip over the Xing header
-        file.seek(header.side_bytes, IO::SEEK_CUR)
-        xing_magic = file.read(4)
-        if xing_magic =~ /Xing|Info/
-          offset += header.frame_size
-          file.seek(offset, IO::SEEK_SET)
-          next
-        end
-
-        # Go back to the start of the frame and read it in
-        file.seek(offset, IO::SEEK_SET)
-        frame = file.read(header.frame_size)
-        @chunks.last.append_frame(frame, header.duration)
-        offset += header.frame_size
-
-        # Do we have enough frames?
-        next if @chunks.last.frames < frames_per_chunk
-        @chunks.last.write(@output_dir)
-        @total_duration += @chunks.last.duration
-        new_chunk
+    offset = @input_file.tell
+    until @input_file.eof?
+      # Read in the header
+      begin
+        header = Mp3file::MP3Header.new(@input_file)
+      rescue Mp3file::InvalidMP3HeaderError
+        break
       end
+
+      # Go back to the start of the frame and read it in
+      @input_file.seek(offset, IO::SEEK_SET)
+      frame = @input_file.read(header.frame_size)
+      @chunks.last.append_frame(frame, header.duration)
+      offset += header.frame_size
+
+      # Do we have enough frames?
+      next if @chunks.last.frames < @frames_per_chunk
+      @chunks.last.write(@output_dir)
+      @total_duration += @chunks.last.duration
+      new_chunk
     end
 
     # Write out the final chunk
     @chunks.last.write(@output_dir) unless @chunks.last.frames.zero?
+  end
+
+  def close_input_file
+    @input_file.close
   end
 
   def manifest_filepath
@@ -110,7 +116,9 @@ class MP3toHLS
 
   def run
     create_output_dir
+    open_input_file
     write_chunks
+    close_input_file
     write_manifest
   end
 end
