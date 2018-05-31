@@ -2,6 +2,7 @@ AllCops:
   TargetRubyVersion: 2.1
   Exclude:
   - 'vendor/**/*'
+  - 'experiments/**/*'
 
 Style/GuardClause:
   Enabled: false
@@ -17,16 +18,8 @@ Style/SymbolArray:
 
 MethodLength:
   Enabled: true
-  Max: 100
+  Max: 20
 
-# TODO: break up into smaller classes?
-ClassLength:
-  Max: 200
-
-# TODO: re-factor write_chunk and write_manifest
+# TODO: more re-factoring to reduce method complexity
 Metrics/AbcSize:
-  Max: 55
-
-# TODO: convert File.open block into a template?
-Metrics/BlockLength:
-  Max: 32
+  Max: 40
