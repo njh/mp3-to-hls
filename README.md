@@ -1,7 +1,7 @@
 mp3-to-hls
 ==========
 
-[![Build Status](https://travis-ci.org/njh/mp3-to-hls.svg?branch=master)](https://travis-ci.org/njh/mp3-to-hls)
+[![Build Status](https://app.travis-ci.com/njh/mp3-to-hls.svg?branch=main)](https://app.travis-ci.com/njh/mp3-to-hls)
 
 Ruby script to convert an MP3 file into an HLS stream.
 
